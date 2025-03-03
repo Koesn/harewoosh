@@ -4,7 +4,9 @@ A one-click to transcribe, summarize, and create outline of large speech audio u
 ## Description
 Harewoosh is a limitless transcriber web UI. It designed to transcribe huge speech/audio file without worries. Uploading, transcribing, and summarizing large video/audio file are no longer a hassle. It's not like public endpoint which mostly limited to 25 MB of file to transcribe. HareWoosh is simply no limit.  
   
-HareWoosh designed to quickly capture ideas of a speech, it will create summary and outline of the transcribed file. Leveraging Insanely Fast Whisper with whisper-large-v3-turbo, the process is very fast.
+HareWoosh designed to quickly capture ideas of a speech, it will create summary and outline of the transcribed file. Leveraging Insanely Fast Whisper with whisper-large-v3-turbo, the process is very fast.  
+
+![Whoosh](https://static.promediateknologi.id/crop/30x1157:1020x1691/0x0/webp/photo/p2/69/2024/08/10/Screenshot_20240810_163740_Instagram-3532592484.jpg)
 
 ## Screenshots
 ![Uploading large file](https://i.ibb.co.com/HfJqdJFq/Tangkapan-Layar-2025-03-03-pukul-08-32-58.png)
