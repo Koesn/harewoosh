@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HareWoosh</title>
+    <style>
+        /* Light mode (default) */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            max-width: 95%;
+            margin: auto;
+        }
+
+        input, button {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+            color: #333;
+        }
+
+        button {
+            width: 100px;
+            padding: 14px;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        .recreate-button {
+            display: block;
+            width: 100px;
+            margin: 15px auto 5px;
+            padding: 8px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .recreate-button:hover {
+            background-color: #218838;
+        }
+        
+        /* Dark mode untuk tombol recreate */
+        @media (prefers-color-scheme: dark) {
+            .recreate-button {
+                background-color: #28a745;
+            }
+            
+            .recreate-button:hover {
+                background-color: #218838;
+            }
+        }
+
+        .result-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+            height: calc(80vh - 130px); /* 80% dari tinggi viewport dikurangi perkiraan ruang untuk header */
+            min-height: 400px; /* Minimal tinggi untuk layar kecil */
+        }
+
+        .result-column {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: left;
+            font-size: 14px;
+            min-height: 200px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            max-height: 600px;
+        }
+
+        .result-column h3 {
+            text-align: center;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .result-column p {
+            text-align: justify;
+            line-height: 1.5;
+        }
+
+        .column-processing {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-style: italic;
+            color: #777;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        /* Animasi Loading */
+        .loading {
+            display: none; /* Sembunyikan secara default */
+            font-size: 24px;
+            margin-top: 20px;
+        }
+
+        .loading span {
+            display: inline-block;
+            animation: rotate 1.5s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Progress bar untuk upload */
+        .progress-container {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 20px;
+            background-color: #007BFF;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.3s;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+        }
+
+        /* Progress bar untuk transkripsi - DIPERBAIKI */
+        .transcription-progress-container {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+            overflow: hidden;
+        }
+
+        .transcription-progress-bar {
+            height: 20px;
+            width: 100%;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            position: relative;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .transcription-progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                rgba(212, 252, 121, 0.7) 0%,
+                rgba(150, 230, 161, 0.7) 20%,
+                rgba(194, 233, 251, 0.7) 40%,
+                rgba(119, 161, 252, 0.7) 60%,
+                rgba(250, 208, 196, 0.7) 80%,
+                rgba(255, 154, 158, 0.7) 100%
+            );
+            background-size: 200% 100%;
+            animation: gradientFlow 5s linear infinite;
+        }
+
+        .transcription-progress-bar-text {
+            position: relative;
+            z-index: 2;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #121212;
+                color: #e0e0e0;
+            }
+
+            .container {
+                background: #1e1e1e;
+                color: #e0e0e0;
+            }
+
+            input, button {
+                background-color: #2d2d2d;
+                color: #e0e0e0;
+                border-color: #444;
+            }
+
+            button {
+                background-color: #1a73e8;
+                color: white;
+            }
+
+            button:hover {
+                background-color: #1557b0;
+            }
+
+            .result-column {
+                background: #2d2d2d;
+                color: #e0e0e0;
+                border-color: #444;
+            }
+
+            .result-column h3 {
+                border-bottom-color: #444;
+            }
+
+            .column-processing {
+                color: #aaa;
+            }
+
+            th {
+                background-color: #1a73e8;
+                color: white;
+            }
+
+            td {
+                background-color: #1e1e1e;
+                color: #e0e0e0;
+            }
+
+            .progress-container {
+                background-color: #444;
+            }
+
+            .transcription-progress-container {
+                background-color: #444;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>HareWoosh</h2>
+        <p><em>Transcribe, summarize, outline.</em></p>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" name="file" id="fileInput" required>
+            <button type="submit" id="submitButton">Process</button>
+        </form>
+        <div id="progressContainer" class="progress-container">
+            <div id="progressBar" class="progress-bar">0%</div>
+        </div>
+        <div id="transcriptionProgressContainer" class="transcription-progress-container">
+            <div id="transcriptionProgressBar" class="transcription-progress-bar">
+                <span class="transcription-progress-bar-text">Transcribing...</span>
+            </div>
+        </div>
+        <p id="status" class="status"></p>
+        <p id="loading" class="loading"><span>🌀</span></p>
+        
+        <!-- Kontainer Hasil 3 Kolom -->
+        <div id="resultContainer" class="result-container" style="display: none;">
+            <div id="transcriptionColumn" class="result-column">
+                <h3>Transcription</h3>
+                <div id="transcriptionResult"></div>
+            </div>
+            <div id="paraphraseColumn" class="result-column">
+                <h3>Summary</h3>
+                <div id="paraphraseResult"></div>
+                <button id="recreateParaphrase" class="recreate-button" style="display: none;">Recreate</button>
+            </div>
+            <div id="outlineColumn" class="result-column">
+                <h3>Outline</h3>
+                <div id="outlineResult"></div>
+                <button id="recreateOutline" class="recreate-button" style="display: none;">Recreate</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Konstanta untuk chunking
+        const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB per chunk
+        const POLLING_INTERVAL = 3000; // 3 detik
+        let pollingAttempts = 0;
+        const MAX_POLLING_ATTEMPTS = 300; // Maksimal 15 menit (300 * 3 detik)
+        let lastConnectionAttempt = 0;
+        
+        // Fungsi untuk mengonversi ukuran file ke MB
+        function formatFileSize(bytes) {
+            const mb = bytes / (1024 * 1024); // Konversi byte ke MB
+            return mb.toFixed(2) + " MB"; // Format ke 2 angka desimal
+        }
+        
+        
+        
+        async function checkStatus(filename) {
+            try {
+                // Tambahkan timestamp untuk mencegah caching oleh Cloudflare
+                const timestamp = new Date().getTime();
+                const response = await fetch(`/status/${filename}?_=${timestamp}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Status check failed: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                lastConnectionAttempt = Date.now();
+                
+                // Reset polling attempts karena koneksi berhasil
+                pollingAttempts = 0;
+                
+                if (data.status === "done") {
+                    // Tampilkan nama file asli jika tersedia
+                    const displayFilename = window.originalFilename || filename;
+                    document.getElementById("status").innerText = `Transcribe of "${displayFilename}" finished!`;
+                    document.getElementById("loading").style.display = "none";
+                    document.getElementById("transcriptionProgressContainer").style.display = "none";
+                    
+                    // Tampilkan kontainer hasil
+                    document.getElementById("resultContainer").style.display = "grid";
+                    
+                    // Isi kolom transkripsi
+                    document.getElementById("transcriptionResult").innerHTML = `<p>${data.text}</p>`;
+                    
+                    // Mulai proses LLM untuk parafrase dan kerangka pembahasan
+                    document.getElementById("paraphraseResult").innerHTML = '<div class="column-processing">Generating summary...</div>';
+                    document.getElementById("outlineResult").innerHTML = '<div class="column-processing">Generating outline...</div>';
+                    
+                    // Kirim permintaan ke backend untuk memproses dengan LLM
+                    processWithLLM(data.text);
+                    
+                    // Ganti tombol menjadi "Reset"
+                    const submitButton = document.getElementById("submitButton");
+                    submitButton.innerText = "Reset";
+                    
+                    clearInterval(window.statusChecker);
+                } else if (data.status === "error") {
+                    document.getElementById("status").innerText = "Failed to process file: " + (data.message || "Unknown error");
+                    document.getElementById("loading").style.display = "none";
+                    document.getElementById("transcriptionProgressContainer").style.display = "none";
+                    clearInterval(window.statusChecker);
+                } else if (data.status === "processing") {
+                    // Update progress text jika ada
+                    if (data.progress) {
+                        const progressText = document.querySelector(".transcription-progress-bar-text");
+                        // progressText.textContent = `Transcribing ${data.progress}%`;
+                        progressText.textContent = `Transcribing...`;
+                    }
+                }
+            } catch (error) {
+                console.error("Error checking status:", error);
+                pollingAttempts++;
+                
+                // Jika polling gagal terlalu banyak kali, tampilkan pesan error
+                if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
+                    document.getElementById("status").innerText = "Lost connection to server. Please refresh page.";
+                    document.getElementById("loading").style.display = "none";
+                    clearInterval(window.statusChecker);
+                } else {
+                    // Update status dengan informasi koneksi terakhir
+                    const timeSinceLastConnection = Math.round((Date.now() - lastConnectionAttempt) / 1000);
+                    document.getElementById("status").innerText = `Transcribing in progress... (Last connection: ${timeSinceLastConnection} seconds ago)`;
+                }
+            }
+        }
+        
+        async function processWithLLM(transcriptionText) {
+            try {
+                // Kirim permintaan untuk parafrase
+                const paraphraseResponse = await fetch("/process-llm/paraphrase", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        text: transcriptionText
+                    })
+                });
+                
+                // Kirim permintaan untuk kerangka pembahasan
+                const outlineResponse = await fetch("/process-llm/outline", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        text: transcriptionText
+                    })
+                });
+                
+                // Proses respons parafrase
+                if (paraphraseResponse.ok) {
+                    const paraphraseData = await paraphraseResponse.json();
+                    document.getElementById("paraphraseResult").innerHTML = `<p>${paraphraseData.result}</p>`;
+                } else {
+                    document.getElementById("paraphraseResult").innerHTML = '<p>Failed to generate summary.</p>';
+                }
+                
+                // Proses respons kerangka pembahasan
+                if (outlineResponse.ok) {
+                    const outlineData = await outlineResponse.json();
+                    document.getElementById("outlineResult").innerHTML = `<p>${outlineData.result}</p>`;
+                } else {
+                    document.getElementById("outlineResult").innerHTML = '<p>Failed to generate outline.</p>';
+                }
+            } catch (error) {
+                console.error("Error processing with LLM:", error);
+                document.getElementById("paraphraseResult").innerHTML = '<p>Connection to LLM service failed.</p>';
+                document.getElementById("outlineResult").innerHTML = '<p>Connection to LLM service failed.</p>';
+            }
+        }
+        
+        function startPolling(filename) {
+            // Tampilkan progress bar transkripsi
+            document.getElementById("transcriptionProgressContainer").style.display = "block";
+            
+            // Set waktu koneksi awal
+            lastConnectionAttempt = Date.now();
+            
+            // Bersihkan interval sebelumnya jika ada
+            if (window.statusChecker) {
+                clearInterval(window.statusChecker);
+            }
+            
+            // Jalankan polling pertama segera
+            checkStatus(filename);
+            
+            // Kemudian set interval polling
+            window.statusChecker = setInterval(() => checkStatus(filename), POLLING_INTERVAL);
+        }
+        
+        async function uploadChunks(file) {
+            const fileSize = file.size;
+            const chunks = Math.ceil(fileSize / CHUNK_SIZE);
+            const filename = file.name;
+            const progressBar = document.getElementById("progressBar");
+            const progressContainer = document.getElementById("progressContainer");
+            
+            // Tampilkan progress bar
+            progressContainer.style.display = "block";
+            
+            try {
+                // Inisialisasi upload dengan mengirim informasi file
+                const initResponse = await fetch("/upload-init/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        filename: filename,
+                        totalChunks: chunks,
+                        fileSize: fileSize
+                    })
+                });
+                
+                if (!initResponse.ok) {
+                    throw new Error(`Inisialisasi upload gagal: ${initResponse.status}`);
+                }
+                
+                const initData = await initResponse.json();
+                const uploadId = initData.uploadId;
+                
+                // Upload setiap chunk
+                for (let chunkIndex = 0; chunkIndex < chunks; chunkIndex++) {
+                    const start = chunkIndex * CHUNK_SIZE;
+                    const end = Math.min(fileSize, start + CHUNK_SIZE);
+                    const chunk = file.slice(start, end);
+                    
+                    const formData = new FormData();
+                    formData.append("file", chunk);
+                    formData.append("uploadId", uploadId);
+                    formData.append("chunkIndex", chunkIndex);
+                    
+                    const response = await fetch("/upload-chunk/", {
+                        method: "POST",
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Gagal upload chunk ${chunkIndex}: ${response.status}`);
+                    }
+                    
+                    // Update progress bar
+                    const progress = Math.round(((chunkIndex + 1) / chunks) * 100);
+                    progressBar.style.width = `${progress}%`;
+                    progressBar.textContent = `${progress}%`;
+                }
+                
+                // Selesai upload semua chunk, minta server untuk menggabungkan
+                const completeResponse = await fetch("/upload-complete/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        uploadId: uploadId,
+                        filename: filename
+                    })
+                });
+                
+                if (!completeResponse.ok) {
+                    throw new Error(`Penyelesaian upload gagal: ${completeResponse.status}`);
+                }
+                
+                return await completeResponse.json();
+            } catch (error) {
+                // Propagate error to caller
+                throw error;
+            }
+        }
+        
+        // Modifikasi pada fungsi uploadFile
+        async function uploadFile(event) {
+            event.preventDefault();
+            
+            // Ambil file dari input
+            const fileInput = document.getElementById("fileInput");
+            const file = fileInput.files[0];
+            
+            // Validasi: Pastikan file sudah dipilih
+            if (!file) {
+                alert("Pick a video/audio file to transcribe.");
+                return;
+            }
+            
+            // Tampilkan ukuran file dalam pesan status
+            const fileSize = formatFileSize(file.size);
+            document.getElementById("status").innerText = `Uploading ${fileSize}...`;
+            document.getElementById("loading").style.display = "block";
+            
+            try {
+                // Upload file dengan chunking
+                const data = await uploadChunks(file);
+                
+                // Sembunyikan progress bar upload setelah selesai
+                document.getElementById("progressContainer").style.display = "none";
+                
+                // Update status
+                document.getElementById("status").innerText = "Transcribing in progress, please wait...";
+                
+                // Simpan nama file asli dan nama file dengan UUID
+                window.originalFilename = data.original_filename;
+                window.uuidFilename = data.filename;
+                
+                // Mulai polling dengan nama file yang berisi UUID
+                startPolling(data.filename);
+            } catch (error) {
+                console.error("Error uploading file:", error);
+                document.getElementById("loading").style.display = "none";
+                document.getElementById("progressContainer").style.display = "none";
+                document.getElementById("status").innerText = "Error uploading file: " + error.message;
+            }
+        }
+        
+        function resetForm(event) {
+            event.preventDefault(); // Mencegah reload halaman
+            
+            // Kosongkan semua elemen
+            document.getElementById("fileInput").value = ""; // Reset input file
+            document.getElementById("status").innerText = ""; // Kosongkan status
+            document.getElementById("loading").style.display = "none"; // Sembunyikan loading
+            document.getElementById("resultContainer").style.display = "none"; // Sembunyikan hasil
+            document.getElementById("transcriptionResult").innerHTML = ""; // Kosongkan hasil transkripsi
+            document.getElementById("paraphraseResult").innerHTML = ""; // Kosongkan hasil parafrase
+            document.getElementById("outlineResult").innerHTML = ""; // Kosongkan hasil kerangka
+            document.getElementById("progressContainer").style.display = "none"; // Sembunyikan progress bar upload
+            document.getElementById("transcriptionProgressContainer").style.display = "none"; // Sembunyikan progress bar transkripsi
+            
+            // Sembunyikan tombol recreate
+            document.getElementById("recreateParaphrase").style.display = "none";
+            document.getElementById("recreateOutline").style.display = "none";
+            
+            // Reset variabel teks transkripsi dan UUID filename
+            currentTranscriptionText = "";
+            window.originalFilename = null;
+            window.uuidFilename = null;
+            
+            // Kembalikan tombol ke "Upload dan Transkripsikan"
+            const submitButton = document.getElementById("submitButton");
+            submitButton.innerText = "Process";
+            
+            // Hapus semua event listener dari tombol dengan membuat clone
+            const newButton = submitButton.cloneNode(true);
+            submitButton.parentNode.replaceChild(newButton, submitButton);
+            
+            // Tambahkan event listener yang baru
+            newButton.addEventListener("click", function(event) {
+                if (this.innerText === "Reset") {
+                    resetForm(event);
+                } else {
+                    uploadFile(event);
+                }
+            });
+            
+            // Bersihkan interval polling jika ada
+            if (window.statusChecker) {
+                clearInterval(window.statusChecker);
+                window.statusChecker = null;
+            }
+            
+            // Reset variabel global
+            pollingAttempts = 0;
+            lastConnectionAttempt = 0;
+        }
+        
+        // Event listener untuk tombol submit
+        document.getElementById("submitButton").addEventListener("click", function(event) {
+            const submitButton = document.getElementById("submitButton");
+            if (submitButton.innerText === "Reset") {
+                resetForm(event);
+            } else {
+                uploadFile(event);
+            }
+        });
+        // Variabel global untuk menyimpan teks transkripsi
+        let currentTranscriptionText = "";
+        
+        async function processWithLLM(transcriptionText) {
+            // Simpan teks transkripsi saat ini untuk digunakan kembali
+            currentTranscriptionText = transcriptionText;
+            
+            try {
+                // Kirim permintaan untuk parafrase
+                await processParaphrase(transcriptionText);
+                
+                // Kirim permintaan untuk kerangka pembahasan
+                await processOutline(transcriptionText);
+                
+                // Tampilkan tombol recreate
+                document.getElementById("recreateParaphrase").style.display = "block";
+                document.getElementById("recreateOutline").style.display = "block";
+            } catch (error) {
+                console.error("Error processing with LLM:", error);
+                document.getElementById("paraphraseResult").innerHTML = '<p>Gagal terhubung ke layanan LLM.</p>';
+                document.getElementById("outlineResult").innerHTML = '<p>Gagal terhubung ke layanan LLM.</p>';
+            }
+        }
+        
+        async function processParaphrase(text) {
+            try {
+                document.getElementById("paraphraseResult").innerHTML = '<div class="column-processing">Generating summary...</div>';
+                
+                const paraphraseResponse = await fetch("/process-llm/paraphrase", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        text: text
+                    })
+                });
+                
+                if (paraphraseResponse.ok) {
+                    const paraphraseData = await paraphraseResponse.json();
+                    document.getElementById("paraphraseResult").innerHTML = `<p>${paraphraseData.result}</p>`;
+                } else {
+                    document.getElementById("paraphraseResult").innerHTML = '<p>Failed to process summary.</p>';
+                }
+            } catch (error) {
+                console.error("Error processing paraphrase:", error);
+                document.getElementById("paraphraseResult").innerHTML = '<p>Connection to LLM service failed.</p>';
+            }
+        }
+        
+        async function processOutline(text) {
+            try {
+                document.getElementById("outlineResult").innerHTML = '<div class="column-processing">Generating outline...</div>';
+                
+                const outlineResponse = await fetch("/process-llm/outline", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        text: text
+                    })
+                });
+                
+                if (outlineResponse.ok) {
+                    const outlineData = await outlineResponse.json();
+                    document.getElementById("outlineResult").innerHTML = `<p>${outlineData.result}</p>`;
+                } else {
+                    document.getElementById("outlineResult").innerHTML = '<p>Failed to process outline.</p>';
+                }
+            } catch (error) {
+                console.error("Error processing outline:", error);
+                document.getElementById("outlineResult").innerHTML = '<p>Connection to LLM service failed.</p>';
+            }
+        }
+        
+        function resetForm(event) {
+            event.preventDefault(); // Mencegah reload halaman
+            
+            // Kosongkan semua elemen
+            document.getElementById("fileInput").value = ""; // Reset input file
+            document.getElementById("status").innerText = ""; // Kosongkan status
+            document.getElementById("loading").style.display = "none"; // Sembunyikan loading
+            document.getElementById("resultContainer").style.display = "none"; // Sembunyikan hasil
+            document.getElementById("transcriptionResult").innerHTML = ""; // Kosongkan hasil transkripsi
+            document.getElementById("paraphraseResult").innerHTML = ""; // Kosongkan hasil parafrase
+            document.getElementById("outlineResult").innerHTML = ""; // Kosongkan hasil kerangka
+            document.getElementById("progressContainer").style.display = "none"; // Sembunyikan progress bar upload
+            document.getElementById("transcriptionProgressContainer").style.display = "none"; // Sembunyikan progress bar transkripsi
+            
+            // Sembunyikan tombol recreate
+            document.getElementById("recreateParaphrase").style.display = "none";
+            document.getElementById("recreateOutline").style.display = "none";
+            
+            // Reset variabel teks transkripsi
+            currentTranscriptionText = "";
+            
+            // Kembalikan tombol ke "Upload dan Transkripsikan"
+            const submitButton = document.getElementById("submitButton");
+            submitButton.innerText = "Process";
+            
+            // Hapus semua event listener dari tombol dengan membuat clone
+            const newButton = submitButton.cloneNode(true);
+            submitButton.parentNode.replaceChild(newButton, submitButton);
+            
+            // Tambahkan event listener yang baru
+            newButton.addEventListener("click", function(event) {
+                if (this.innerText === "Reset") {
+                    resetForm(event);
+                } else {
+                    uploadFile(event);
+                }
+            });
+            
+            // Bersihkan interval polling jika ada
+            if (window.statusChecker) {
+                clearInterval(window.statusChecker);
+                window.statusChecker = null;
+            }
+            
+            // Reset variabel global
+            pollingAttempts = 0;
+            lastConnectionAttempt = 0;
+        }
+        
+    // Event listener untuk tombol recreate
+    document.getElementById("recreateParaphrase").addEventListener("click", async function() {
+    if (currentTranscriptionText) {
+    await processParaphrase(currentTranscriptionText);
+    }
+    });
+    
+    document.getElementById("recreateOutline").addEventListener("click", async function() {
+    if (currentTranscriptionText) {
+    await processOutline(currentTranscriptionText);
+    }
+    });
+    </script>
+</body>
+</html>
