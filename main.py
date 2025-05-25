@@ -392,14 +392,9 @@ async def get_llm_response(system_prompt, user_prompt):
 async def process_paraphrase(request: ProcessLLMRequest):
     """Endpoint untuk memparafrase teks"""
     system_prompt = """
-    # WORK STEPS
-    - Identify the main topics in the transcription.  
-    - Create a structured summary with key points.  
-    - If there are important points, list them in numbered format.  
-    - If there are technical terms, provide brief explanations.  
-    - Use <em>italic</em> for emphasizing important words.  
-    
-    # OUTPUT FORMAT  
+    # WORK STEPS:
+    - Create a complete paraphrase of given text. The paraphrase contains all of the main idea of the text.
+    - The parphrase format is as follows, adjust as needed:
     <body>
         <h4>Title: <summary title></h4>
         <p><strong>Summary:</strong> <brief summary in 2-3 sentences></p>
@@ -415,12 +410,13 @@ async def process_paraphrase(request: ProcessLLMRequest):
         <p><summary conclusion></p>
     </body>
     
-    # OUTPUT INSTRUCTIONS
-    - Generate output strictly following the format above.  
-    - Do not include Markdown tags like ```html.  
-    - Do not add warnings, explanations, or extra information—only the requested output.  
-    - Maintain the structure and terminology present in the transcription.  
-    - Only output the same language with original transcription text.  
+    # OUTPUT INSTRUCTIONS:
+    - Create output using the above format and only using materials from the given text.
+    - Don't add the "```html" tag to your output, as that's a Markdown tag.
+    - Don't output warnings or notes—only the requested parts.
+    - Maintain the chapter and subchapter structure present in the given text.
+    - Don't change terminology present in the text to avoid confusing users.
+    - Only output the same language with original transcription text.
     
     # INPUT:
     
